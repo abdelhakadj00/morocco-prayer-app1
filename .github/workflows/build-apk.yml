@@ -1,0 +1,34 @@
+name: Build Flutter APK
+
+on:
+  workflow_dispatch: # يسمح لك بتشغيل البناء يدوياً بضغطة زر
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+          channel: 'stable'
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: morocco-prayer-app-release
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 90
