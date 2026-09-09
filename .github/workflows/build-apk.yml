@@ -1,7 +1,7 @@
 name: Build Flutter APK
 
 on:
-  workflow_dispatch: # يسمح لك بتشغيل البناء يدوياً بضغطة زر
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -14,11 +14,25 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      # إعداد لغة Java 17 المطلوبة لأحدث تطبيقات الأندرويد
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.19.0'
           channel: 'stable'
+
+      # الخطوة السحرية: إنشاء مجلد الأندرويد المفقود تلقائياً
+      - name: Generate Android Project
+        run: |
+          mkdir -p test
+          touch test/widget_test.dart
+          flutter create --project-name morocco_prayer_times --org com.morocco .
 
       - name: Install Dependencies
         run: flutter pub get
