@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  // تهيئة اللغة العربية للتاريخ والأرقام بشكل صحيح
-  Intl.defaultLocale = 'ar_MA';
   runApp(const MyApp());
 }
 
@@ -18,15 +14,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'مواقيت الصلاة - المغرب',
       debugShowCheckedModeBanner: false,
-      // المعيار الاحترافي: يضمن اتجاه RTL وتنسيق التواريخ العربية تلقائياً
-      locale: const Locale('ar', 'MA'),
-      supportedLocales: const [
-        Locale('ar', 'MA'),
-      ],
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF00695C)),
         useMaterial3: true,
-        textTheme: GoogleFonts.cairoTextTheme(),
+        fontFamily: 'sans-serif', // استخدام خط النظام الافتراضي المضمون
       ),
       home: const PrayerTimesScreen(),
     );
@@ -53,6 +44,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
 
   String selectedCity = 'Rabat';
   Map<String, String> timings = {};
+  String hijriDate = 'جاري التحميل...';
   bool isLoading = true;
   String errorMessage = '';
 
@@ -71,41 +63,64 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   }
 
   Future<void> fetchPrayerTimes() async {
-    setState(() { isLoading = true; errorMessage = ''; });
+    setState(() { 
+      isLoading = true; 
+      errorMessage = ''; 
+    });
+    
     try {
+      // إضافة مهلة زمنية (15 ثانية) لمنع التعليق الأبدي
       final url = Uri.parse('https://api.aladhan.com/v1/timingsByCity?city=$selectedCity&country=Morocco&method=21');
-      final response = await http.get(url);
+      final response = await http.get(url).timeout(const Duration(seconds: 15));
       
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body)['data']['timings'];
-        setState(() {
-          timings = {
-            'الفجر': data['Fajr'],
-            'الشروق': data['Sunrise'],
-            'الظهر': data['Dhuhr'],
-            'العصر': data['Asr'],
-            'المغرب': data['Maghrib'],
-            'العشاء': data['Isha'],
-          };
-          isLoading = false;
-        });
-        final prefs = await SharedPreferences.getInstance();
-        prefs.setString('selected_city', selectedCity);
+        final jsonResponse = jsonDecode(response.body);
+        if (jsonResponse['code'] == 200 && jsonResponse['data'] != null) {
+          final data = jsonResponse['data'];
+          final times = data['timings'];
+          final date = data['date']['hijri'];
+          
+          setState(() {
+            timings = {
+              'الفجر': times['Fajr'] ?? '--:--',
+              'الشروق': times['Sunrise'] ?? '--:--',
+              'الظهر': times['Dhuhr'] ?? '--:--',
+              'العصر': times['Asr'] ?? '--:--',
+              'المغرب': times['Maghrib'] ?? '--:--',
+              'العشاء': times['Isha'] ?? '--:--',
+            };
+            hijriDate = '${date['weekday']['ar']} ${date['date']}';
+            isLoading = false;
+          });
+          
+          final prefs = await SharedPreferences.getInstance();
+          prefs.setString('selected_city', selectedCity);
+        } else {
+          setState(() { 
+            errorMessage = 'فشل في جلب البيانات: ${jsonResponse['status']}'; 
+            isLoading = false; 
+          });
+        }
       } else {
-        setState(() { errorMessage = 'فشل في الاتصال بالخادم'; isLoading = false; });
+        setState(() { 
+          errorMessage = 'خطأ في الخادم: ${response.statusCode}'; 
+          isLoading = false; 
+        });
       }
     } catch (e) {
-      setState(() { errorMessage = 'خطأ: $e'; isLoading = false; });
+      setState(() { 
+        errorMessage = 'خطأ في الاتصال: $e\n\nتأكد من تفعيل الإنترنت في الهاتف.'; 
+        isLoading = false; 
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // تم إزالة Directionality لأن locale: ar_MA يدير اتجاه RTL تلقائياً وبشكل احترافي
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: Text('مواقيت الصلاة', style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+        title: const Text('مواقيت الصلاة', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: const Color(0xFF00695C),
         foregroundColor: Colors.white,
@@ -114,7 +129,30 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF00695C)))
           : errorMessage.isNotEmpty
-              ? Center(child: Text(errorMessage, style: const TextStyle(color: Colors.red)))
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline, color: Colors.red, size: 64),
+                        const SizedBox(height: 16),
+                        Text(errorMessage, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red, fontSize: 16, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: fetchPrayerTimes,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('إعادة المحاولة'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF00695C),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                )
               : Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -151,11 +189,11 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                       const SizedBox(height: 20),
                       Text(
                         cityArabicNames[selectedCity]!,
-                        style: GoogleFonts.cairo(fontSize: 28, fontWeight: FontWeight.bold, color: const Color(0xFF00695C)),
+                        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF00695C)),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        DateFormat('EEEE، d MMMM yyyy', 'ar_MA').format(DateTime.now()),
+                        hijriDate,
                         style: const TextStyle(fontSize: 16, color: Colors.grey),
                       ),
                       const SizedBox(height: 24),
@@ -198,7 +236,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
           child: Icon(icon, color: const Color(0xFF00695C)),
         ),
         title: Text(name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-        trailing: Text(time, style: GoogleFonts.cairo(fontSize: 22, fontWeight: FontWeight.bold, color: const Color(0xFF00695C))),
+        trailing: Text(time, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF00695C))),
       ),
     );
   }
