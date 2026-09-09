@@ -67,7 +67,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   Future<void> fetchPrayerTimes() async {
     setState(() { isLoading = true; errorMessage = ''; });
     try {
-      // Method 21 هو طريقة الحساب الرسمية لوزارة الأوقاف والشؤون الإسلامية المغربية
       final url = Uri.parse('https://api.aladhan.com/v1/timingsByCity?city=$selectedCity&country=Morocco&method=21');
       final response = await http.get(url);
       
@@ -177,9 +176,9 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     IconData icon;
     switch (name) {
       case 'الفجر': icon = Icons.nightlight_round; break;
-      case 'الشروق': icon = Icons.wb_sunny_outlined; break;
+      case 'الشروق': icon = Icons.wb_sunny; break;
       case 'الظهر': icon = Icons.sunny; break;
-      case 'العصر': icon = Icons.partly_cloudy_day; break;
+      case 'العصر': icon = Icons.wb_cloudy; break; // تم التعديل هنا لضمان التوافق
       case 'المغرب': icon = Icons.nights_stay; break;
       case 'العشاء': icon = Icons.nightlight; break;
       default: icon = Icons.access_time;
