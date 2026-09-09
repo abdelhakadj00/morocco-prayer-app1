@@ -95,7 +95,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         setState(() { errorMessage = 'فشل في الاتصال بالخادم'; isLoading = false; });
       }
     } catch (e) {
-      setState(() { errorMessage = 'تحقق من اتصالك بالإنترنت'; isLoading = false; });
+      setState(() { errorMessage = 'خطأ: $e'; isLoading = false; });
     }
   }
 
