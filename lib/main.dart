@@ -150,4 +150,56 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        cityArabicNames[selectedCity
+                        cityArabicNames[selectedCity]!,
+                        style: GoogleFonts.cairo(fontSize: 28, fontWeight: FontWeight.bold, color: const Color(0xFF00695C)),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        DateFormat('EEEE، d MMMM yyyy', 'ar_MA').format(DateTime.now()),
+                        style: const TextStyle(fontSize: 16, color: Colors.grey),
+                      ),
+                      const SizedBox(height: 24),
+                      Expanded(
+                        child: ListView(
+                          children: timings.entries.map((entry) {
+                            return _buildPrayerCard(entry.key, entry.value);
+                          }).toList(),
+                        ),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 16.0),
+                        child: Text('حسب توقيت وزارة الأوقاف والشؤون الإسلامية', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                      )
+                    ],
+                  ),
+                ),
+    );
+  }
+
+  Widget _buildPrayerCard(String name, String time) {
+    IconData icon;
+    switch (name) {
+      case 'الفجر': icon = Icons.nightlight_round; break;
+      case 'الشروق': icon = Icons.wb_sunny; break;
+      case 'الظهر': icon = Icons.sunny; break;
+      case 'العصر': icon = Icons.wb_cloudy; break;
+      case 'المغرب': icon = Icons.nights_stay; break;
+      case 'العشاء': icon = Icons.nightlight; break;
+      default: icon = Icons.access_time;
+    }
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: const Color(0xFF00695C).withOpacity(0.1),
+          child: Icon(icon, color: const Color(0xFF00695C)),
+        ),
+        title: Text(name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        trailing: Text(time, style: GoogleFonts.cairo(fontSize: 22, fontWeight: FontWeight.bold, color: const Color(0xFF00695C))),
+      ),
+    );
+  }
+}
