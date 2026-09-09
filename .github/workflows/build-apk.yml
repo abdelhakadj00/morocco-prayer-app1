@@ -32,12 +32,16 @@ jobs:
           touch test/widget_test.dart
           flutter create --project-name morocco_prayer_times --org com.morocco .
 
-      # الخطوة السحرية الجديدة: رفع إصدار أندرويد الأدنى لتتوافق مع إضافة القبلة
-      - name: Fix minSdkVersion for plugins
+      # الخطوة السحرية: إصلاح إعدادات أندرويد (minSdkVersion و Kotlin)
+      - name: Fix Android Build Configurations
         run: |
+          # رفع إصدار أندرويد الأدنى
           sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/' android/app/build.gradle
           sed -i 's/minSdkVersion 19/minSdkVersion 21/' android/app/build.gradle
           sed -i 's/minSdkVersion 20/minSdkVersion 21/' android/app/build.gradle
+          
+          # تحديث إصدار Kotlin إلى 1.9.0 لتتوافق مع الإضافات الحديثة
+          sed -i "s/ext.kotlin_version = '.*'/ext.kotlin_version = '1.9.0'/" android/build.gradle
 
       - name: Install Dependencies
         run: flutter pub get
