@@ -14,7 +14,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # إعداد لغة Java 17 المطلوبة لأحدث تطبيقات الأندرويد
       - name: Setup Java
         uses: actions/setup-java@v3
         with:
@@ -27,12 +26,18 @@ jobs:
           flutter-version: '3.19.0'
           channel: 'stable'
 
-      # الخطوة السحرية: إنشاء مجلد الأندرويد المفقود تلقائياً
       - name: Generate Android Project
         run: |
           mkdir -p test
           touch test/widget_test.dart
           flutter create --project-name morocco_prayer_times --org com.morocco .
+
+      # الخطوة السحرية الجديدة: رفع إصدار أندرويد الأدنى لتتوافق مع إضافة القبلة
+      - name: Fix minSdkVersion for plugins
+        run: |
+          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/' android/app/build.gradle
+          sed -i 's/minSdkVersion 19/minSdkVersion 21/' android/app/build.gradle
+          sed -i 's/minSdkVersion 20/minSdkVersion 21/' android/app/build.gradle
 
       - name: Install Dependencies
         run: flutter pub get
