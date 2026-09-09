@@ -32,103 +32,16 @@ jobs:
           touch test/widget_test.dart
           flutter create --project-name morocco_prayer_times --org com.morocco .
 
-      # الخطوة الحصينة: استبدال ملفات الإعدادات بضبط دقيق ومضمون 100%
+      # الخطوة المبسطة والمضمونة: تعديل سطر واحد فقط لإصدار Kotlin وسطر لإصدار Android
       - name: Fix Android Build Configurations
         run: |
-          # 1. ضبط إصدار Kotlin إلى 1.9.0 في android/build.gradle
-          cat << 'EOF' > android/build.gradle
-          buildscript {
-              ext.kotlin_version = '1.9.0'
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-              dependencies {
-                  classpath 'com.android.tools.build:gradle:7.3.0'
-                  classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:\$kotlin_version"
-              }
-          }
-          allprojects {
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-          }
-          rootProject.buildDir = '../build'
-          subprojects {
-              project.buildDir = "\${rootProject.buildDir}/\${project.name}"
-          }
-          subprojects {
-              project.evaluationDependsOn(':app')
-          }
-          tasks.register("clean", Delete) {
-              delete rootProject.buildDir
-          }
-          EOF
-
-          # 2. ضبط minSdkVersion إلى 21 في android/app/build.gradle
-          cat << 'EOF' > android/app/build.gradle
-          def localProperties = new Properties()
-          def localPropertiesFile = rootProject.file('local.properties')
-          if (localPropertiesFile.exists()) {
-              localPropertiesFile.withReader('UTF-8') { reader ->
-                  localProperties.load(reader)
-              }
-          }
-
-          def flutterRoot = localProperties.getProperty('flutter.sdk')
-          if (flutterRoot == null) {
-              throw new GradleException("Flutter SDK not found.")
-          }
-
-          def flutterVersionCode = localProperties.getProperty('flutter.versionCode') ?: '1'
-          def flutterVersionName = localProperties.getProperty('flutter.versionName') ?: '1.0'
-
-          apply plugin: 'com.android.application'
-          apply plugin: 'kotlin-android'
-          apply from: "\$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
-
-          android {
-              namespace "com.morocco.morocco_prayer_times"
-              compileSdkVersion flutter.compileSdkVersion
-              ndkVersion flutter.ndkVersion
-
-              compileOptions {
-                  sourceCompatibility JavaVersion.VERSION_1_8
-                  targetCompatibility JavaVersion.VERSION_1_8
-              }
-
-              kotlinOptions {
-                  jvmTarget = '1.8'
-              }
-
-              sourceSets {
-                  main.java.srcDirs += 'src/main/kotlin'
-              }
-
-              defaultConfig {
-                  applicationId "com.morocco.morocco_prayer_times"
-                  minSdkVersion 21
-                  targetSdkVersion flutter.targetSdkVersion
-                  versionCode flutterVersionCode.toInteger()
-                  versionName flutterVersionName
-              }
-
-              buildTypes {
-                  release {
-                      signingConfig signingConfigs.debug
-                  }
-              }
-          }
-
-          flutter {
-              source '../..'
-          }
-
-          dependencies {
-              implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:\$kotlin_version"
-          }
-          EOF
+          # 1. تغيير إصدار Kotlin من 1.7.10 إلى 1.9.0
+          sed -i "s/ext.kotlin_version = '1.7.10'/ext.kotlin_version = '1.9.0'/" android/build.gradle
+          
+          # 2. تغيير minSdkVersion إلى 21 لدعم إضافات الموقع والبوصلة
+          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/' android/app/build.gradle
+          sed -i 's/minSdkVersion 19/minSdkVersion 21/' android/app/build.gradle
+          sed -i 's/minSdkVersion 20/minSdkVersion 21/' android/app/build.gradle
 
       - name: Install Dependencies
         run: flutter pub get
